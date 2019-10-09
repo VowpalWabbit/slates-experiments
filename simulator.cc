@@ -88,9 +88,10 @@ constexpr float rescale_cost(float reward, float values_max, float range_min, fl
 
 constexpr float get_reward(const context_t &context, float x, float y, float z) noexcept
 {
-  const auto raw_reward = get_raw_cost(context, x, y, z);
+  const auto raw_cost = get_raw_cost(context, x, y, z);
   const auto max_value = get_raw_cost(context, MAX_X, MAX_Y, MAX_Z);
-  return -1 * rescale_cost(raw_reward, max_value, RANGE_MIN, RANGE_MAX);
+  // Negate cost to get reward.
+  return rescale_cost(raw_cost, max_value, RANGE_MIN, RANGE_MAX);
 }
 
 context_t generate_random_context()
@@ -133,12 +134,18 @@ int main()
   config.set(rl::name::INTERACTION_SENDER_IMPLEMENTATION, rl::value::INTERACTION_FILE_SENDER);
   config.set(rl::name::DECISION_SENDER_IMPLEMENTATION, rl::value::INTERACTION_FILE_SENDER);
   config.set(rl::name::INITIAL_EPSILON, "1.0");
-  config.set(rl::name::MODEL_SRC, rl::value::NO_MODEL_DATA);
+  // config.set(rl::name::MODEL_SRC, rl::value::NO_MODEL_DATA);
+  config.set(rl::name::MODEL_SRC, rl::value::FILE_MODEL_DATA);
+  config.set(rl::name::MODEL_FILE_NAME, "/mnt/c/w/repos/slate_sim/build/slates2.model");
+  config.set(rl::name::CCB_SAMPLE_MODE, rl::value::SAMPLE_SINGLE);
+  config.set(rl::name::MODEL_VW_INITIAL_COMMAND_LINE, "--ccb_explore_adf --json --quiet --epsilon 1.0 --id N/A");
 
   auto const err_fn = [](const rl::api_status& status, void*){
     std::cout << status.get_error_msg() << "\n";
   };
 
+  float total_reward = 0.f;
+  size_t num_rewards = 0;
   std::unique_ptr<rl::live_model> rl = std::unique_ptr<rl::live_model>(new rl::live_model(config, err_fn));
   if (rl->init(&status) != rl::error_code::success)
   {
@@ -162,7 +169,7 @@ int main()
   prob_data.push_slot({slate_context, y_actions});
   prob_data.push_slot({slate_context, z_actions});
 
-  constexpr auto num_iterations = 10;
+  constexpr auto num_iterations = 100000;
   for (auto i = 0; i < num_iterations; i++)
   {
     auto context = generate_random_context();
@@ -189,6 +196,14 @@ int main()
     it++;
 
     auto reward = get_reward(context, x, y, z);
+    total_reward += reward;
+    num_rewards++;
+
+    if(i%1000 == 0)
+    {
+      std::cout << "i: " << i<< ", Avg reward: " << total_reward/num_rewards << ", this reward: " << reward << "\n";
+    }
+
     for (auto &item : ret)
     {
       auto event_id = item.get_event_id();
