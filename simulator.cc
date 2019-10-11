@@ -68,7 +68,7 @@ constexpr std::array<float, 6> get_coefficients(const context_t &context) noexce
     return {0.87995436, 0.10853902, 0.24386487, 0.14241173, 0.30777027, 0.14954826};
 }
 
-constexpr float get_raw_cost(const context_t &context, float x, float y, float z) noexcept
+constexpr float get_raw_reward(const context_t &context, float x, float y, float z) noexcept
 {
   const auto coefficients = get_coefficients(context);
   auto reward = 0.f;
@@ -81,17 +81,17 @@ constexpr float get_raw_cost(const context_t &context, float x, float y, float z
   return reward;
 }
 
-constexpr float rescale_cost(float reward, float values_max, float range_min, float range_max) noexcept
+constexpr float rescale_reward(float reward, float values_max, float range_min, float range_max) noexcept
 {
   return reward / values_max * (range_max - range_min) + range_min;
 }
 
 constexpr float get_reward(const context_t &context, float x, float y, float z) noexcept
 {
-  const auto raw_cost = get_raw_cost(context, x, y, z);
-  const auto max_value = get_raw_cost(context, MAX_X, MAX_Y, MAX_Z);
+  const auto raw_cost = get_raw_reward(context, x, y, z);
+  const auto max_value = get_raw_reward(context, MAX_X, MAX_Y, MAX_Z);
   // Negate cost to get reward.
-  return rescale_cost(raw_cost, max_value, RANGE_MIN, RANGE_MAX);
+  return rescale_reward(raw_cost, max_value, RANGE_MIN, RANGE_MAX);
 }
 
 context_t generate_random_context()
