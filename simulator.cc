@@ -41,7 +41,7 @@ constexpr float MAX_Y = 3.f;
 constexpr float MAX_Z = 2.f;
 constexpr float RANGE_MIN = 0.f;
 constexpr float RANGE_MAX = 1.f;
-constexpr float ACTION_STEP_SIZE = 1.f;
+constexpr float ACTION_STEP_SIZE = 0.1f;
 
 constexpr bool operator==(const context_t &a, const context_t &b) noexcept
 {
@@ -86,11 +86,10 @@ constexpr float rescale_reward(float reward, float values_max, float range_min, 
   return reward / values_max * (range_max - range_min) + range_min;
 }
 
-constexpr float get_reward(const context_t &context, float x, float y, float z) noexcept
+ float get_reward(const context_t &context, float x, float y, float z) noexcept
 {
   const auto raw_cost = get_raw_reward(context, x, y, z);
   const auto max_value = get_raw_reward(context, MAX_X, MAX_Y, MAX_Z);
-  // Negate cost to get reward.
   return rescale_reward(raw_cost, max_value, RANGE_MIN, RANGE_MAX);
 }
 
@@ -109,7 +108,7 @@ std::vector<feature_space> generate_actions(float max_value)
   std::generate(actions.begin(), actions.end(), [&generator]() {
     auto val = generator;
     generator += ACTION_STEP_SIZE;
-    return feature_space({{"TAction", {{"value=" + std::to_string(val)}}}});
+    return feature_space({{"Action", {{"value=" + std::to_string(val)}}}});
   });
   return actions;
 }
@@ -117,7 +116,7 @@ std::vector<feature_space> generate_actions(float max_value)
 feature_space generate_shared_context(const context_t &context)
 {
   feature_space shared_context;
-  feat_namespace shared_ns("TShared");
+  feat_namespace shared_ns("Shared");
   shared_ns.push_feature("platform=" + std::to_string(static_cast<unsigned int>(context._platform)));
   shared_ns.push_feature("connection=" + std::to_string(static_cast<unsigned int>(context._connection)));
   shared_ns.push_feature("region=" + std::to_string(static_cast<unsigned int>(context._region)));
@@ -134,11 +133,10 @@ int main()
   config.set(rl::name::INTERACTION_SENDER_IMPLEMENTATION, rl::value::INTERACTION_FILE_SENDER);
   config.set(rl::name::DECISION_SENDER_IMPLEMENTATION, rl::value::INTERACTION_FILE_SENDER);
   config.set(rl::name::INITIAL_EPSILON, "1.0");
-  // config.set(rl::name::MODEL_SRC, rl::value::NO_MODEL_DATA);
   config.set(rl::name::MODEL_SRC, rl::value::FILE_MODEL_DATA);
-  config.set(rl::name::MODEL_FILE_NAME, "/mnt/c/w/repos/slate_sim/build/slates2.model");
+  config.set(rl::name::MODEL_FILE_NAME, "./input.model");
   config.set(rl::name::CCB_SAMPLE_MODE, rl::value::SAMPLE_SINGLE);
-  config.set(rl::name::MODEL_VW_INITIAL_COMMAND_LINE, "--ccb_explore_adf --json --quiet --epsilon 1.0 --id N/A");
+  config.set(rl::name::MODEL_VW_INITIAL_COMMAND_LINE, "--ccb_explore_adf --slate --json --quiet --epsilon 1.0 --id N/A");
 
   auto const err_fn = [](const rl::api_status& status, void*){
     std::cout << status.get_error_msg() << "\n";
@@ -157,7 +155,7 @@ int main()
 
   feature_space slate_context;
   feat_namespace shared_ns("Slate");
-  shared_ns.push_feature("c");
+  shared_ns.push_feature("constant");
   slate_context.push_namespace(shared_ns);
 
   auto x_actions = generate_actions(MAX_X);
@@ -199,7 +197,7 @@ int main()
     total_reward += reward;
     num_rewards++;
 
-    if(i%1000 == 0)
+    if(i%500 == 0)
     {
       std::cout << "i: " << i<< ", Avg reward: " << total_reward/num_rewards << ", this reward: " << reward << "\n";
     }
@@ -214,4 +212,5 @@ int main()
       }
     }
   }
+  std::cout << "Total iterations: " << num_iterations<< ", Avg reward: " << total_reward/num_rewards << "\n";
 }
