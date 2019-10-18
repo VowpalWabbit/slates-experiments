@@ -25,7 +25,7 @@ struct person
   std::string _favorite_character;
   std::vector<float> _topic_click_probability;
 
-  std::string get_features() const 
+  std::string get_features() const
   {
     std::stringstream ss;
     ss << R"("User":{"id":")" << _id << R"(","major":")" << _major << R"(","hobby":")" << _hobby
@@ -54,7 +54,7 @@ std::string get_action_features(std::vector<std::string> const& actions)
   std::string joiner = "";
   for (auto const& action : actions)
   {
-    ss << joiner << R"({"a":{"topic":")" << action << R"("}})";
+    ss << joiner << R"({"A":{"topic":")" << action << R"("}})";
     joiner = ",";
   }
   ss << "]";
@@ -94,7 +94,7 @@ int main()
   std::uniform_real_distribution<float> click_distribution(0.0f, 1.0f);
   std::uniform_int_distribution<size_t> context_distribution(0, people.size() - 1);
 
-  constexpr size_t num_rounds = 100;
+  constexpr size_t num_rounds = 10000;
   auto const action_features = get_action_features(actions);
   float reward = 0.f;
   for (size_t i = 1; i <= num_rounds; i++)

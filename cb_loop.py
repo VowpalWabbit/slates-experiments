@@ -12,12 +12,12 @@ SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
 #   3. VW is run using that cooked log as the input. It takes the last trained model as input and produces a model to be used on the next run. It is persisted as <ITERATION>.model
 
 # Simulator MUST output an interaction.fb.data and observation.fb.data
-SIMULATOR_EXE = os.path.join(SCRIPT_DIR, "build/simulator")
+SIMULATOR_EXE = os.path.join(SCRIPT_DIR, "build/cbsimulator")
 # Joiner must be able to find the files of the simulator and output a dsjson file
 JOINER_EXE = os.path.join(SCRIPT_DIR, "build/reinforcement_learning/test_tools/joiner/joiner.out")
 # The given arguments must accept the format outputted by the joiner
 VW_EXE = "vw"
-EXTRA_VW_ARGS = "--ccb_explore_adf --slate --epsilon 0.2 --power_t 0 -l 0.005 --save_resume -q UA"
+EXTRA_VW_ARGS = "--cb_explore_adf --epsilon 0.2 --power_t 0 -l 0.005 --save_resume -q UA"
 NUM_ITERATIONS = 20
 
 def run_command(command):

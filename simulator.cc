@@ -116,7 +116,7 @@ std::vector<feature_space> generate_actions(float max_value)
 feature_space generate_shared_context(const context_t &context)
 {
   feature_space shared_context;
-  feat_namespace shared_ns("Shared");
+  feat_namespace shared_ns("User");
   shared_ns.push_feature("platform=" + std::to_string(static_cast<unsigned int>(context._platform)));
   shared_ns.push_feature("connection=" + std::to_string(static_cast<unsigned int>(context._connection)));
   shared_ns.push_feature("region=" + std::to_string(static_cast<unsigned int>(context._region)));
