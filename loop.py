@@ -12,7 +12,7 @@ SCRIPT_DIR=os.path.dirname(os.path.realpath(__file__))
 #   3. VW is run using that cooked log as the input. It takes the last trained model as input and produces a model to be used on the next run. It is persisted as <ITERATION>.model
 
 # Simulator MUST output an interaction.fb.data and observation.fb.data
-SIMULATOR_EXE = os.path.join(SCRIPT_DIR, "build/simulator")
+SIMULATOR_EXE = os.path.join(SCRIPT_DIR, "build/skype_slate_simulator")
 # Joiner must be able to find the files of the simulator and output a dsjson file
 JOINER_EXE = os.path.join(SCRIPT_DIR, "build/reinforcement_learning/test_tools/joiner/joiner.out")
 # The given arguments must accept the format outputted by the joiner

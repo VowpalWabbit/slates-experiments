@@ -7,8 +7,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/reinforcement_le
 
 add_subdirectory(reinforcement_learning)
 
-add_executable(simulator simulator.cc)
-target_link_libraries(simulator PUBLIC rlclientlib)
+add_executable(skype_slate_simulator skype_slate_simulator.cc)
+target_link_libraries(skype_slate_simulator PUBLIC rlclientlib)
 
 add_executable(cbsimulator cb_simulator.cc)
 target_link_libraries(cbsimulator PUBLIC rlclientlib)
