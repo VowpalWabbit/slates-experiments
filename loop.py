@@ -50,7 +50,7 @@ def run_iteration(past_id, current_id):
   if past_id is not None:
     input_model = ["-i", past_id + ".model"]
   outut_model = ["-f", current_id + ".model"]
-  args = [VW_EXE, "--dsjson", "-d", data_file_name, "--ccb_explore_adf", "--slate", "--epsilon", "0.8", "--power_t", "0", "-l", "0.005", "--save_resume"]
+  args = [VW_EXE, "--dsjson", "-d", data_file_name, "--ccb_explore_adf", "--slate", "--epsilon", "0.2", "--power_t", "0", "-l", "0.005", "--save_resume", "--id", current_id]
   args.extend(outut_model)
   args.extend(input_model)
   print("\t\t" + " ".join(args))
