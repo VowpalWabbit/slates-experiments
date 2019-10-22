@@ -10,5 +10,8 @@ add_subdirectory(reinforcement_learning)
 add_executable(skype_slate_simulator skype_slate_simulator.cc)
 target_link_libraries(skype_slate_simulator PUBLIC rlclientlib)
 
-add_executable(cbsimulator cb_simulator.cc)
-target_link_libraries(cbsimulator PUBLIC rlclientlib)
+add_executable(cb_simulator cb_simulator.cc)
+target_link_libraries(cb_simulator PUBLIC rlclientlib)
+
+add_executable(cb_slate_simulator cb_slate_simulator.cc)
+target_link_libraries(cb_slate_simulator PUBLIC rlclientlib)
