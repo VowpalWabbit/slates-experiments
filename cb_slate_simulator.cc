@@ -8,6 +8,7 @@
 #include <configuration.h>
 #include <event_builder.h>
 #include <constants.h>
+#include <random>
 
 namespace rl = reinforcement_learning;
 
@@ -50,7 +51,6 @@ struct person
   }
 };
 
-
 std::vector<feature_space> generate_actions(std::vector<std::string> const& action_names)
 {
   std::vector<feature_space> actions;
@@ -80,7 +80,6 @@ int main()
   };
 
   float total_reward = 0.f;
-  size_t num_rewards = 0;
   std::unique_ptr<rl::live_model> rl = std::unique_ptr<rl::live_model>(new rl::live_model(config, err_fn));
   if (rl->init(&status) != rl::error_code::success)
   {
@@ -88,9 +87,12 @@ int main()
     return -1;
   }
 
-  std::vector<std::string> const actions{"HerbGarden", "MachineLearning"};
+  std::vector<std::string> const action_names{"HerbGarden", "MachineLearning"};
   std::vector<float> const tp1{0.3f, 0.2f};
   std::vector<float> const tp2{0.1f, 0.4f};
+
+  std::vector<person> const people{
+      person("rnc", "engineering", "hiking", "spock", tp1), person("mk", "psychology", "kids", "7of9", tp2)};
 
   std::default_random_engine rd{0};
   std::mt19937 eng(rd());
@@ -98,10 +100,6 @@ int main()
   std::uniform_int_distribution<size_t> context_distribution(0, people.size() - 1);
 
   constexpr size_t num_rounds = 10000;
-  auto const action_features = get_action_features(actions);
-  float reward = 0.f;
-
-
   estimator est(rl.get());
 
   feature_space slate_context;
@@ -109,56 +107,37 @@ int main()
   shared_ns.push_feature("constant");
   slate_context.push_namespace(shared_ns);
 
-  auto x_actions = generate_actions(MAX_X);
-
+  auto actions = generate_actions(action_names);
 
   problem_data<slate_problem_type> prob_data;
-  prob_data.push_slot({slate_context, x_actions});
+  prob_data.push_slot({slate_context, actions});
 
-  constexpr auto num_iterations = 100000;
+  constexpr auto num_iterations = 10000;
   for (auto i = 0; i < num_iterations; i++)
   {
-    auto context = generate_random_context();
-    auto shared_context = generate_shared_context(context);
-
+    auto const& person = people[context_distribution(eng)];
     problem_event<slate_problem_type> prob;
-    prob.shared_context(shared_context);
+    prob.shared_context(person.get_features());
     prob.event_problem(prob_data);
 
     auto ret = est.predict_and_log(prob);
     auto it = ret.begin();
     size_t chosen;
-
     it->get_chosen_action_id(chosen);
-    float x = chosen * ACTION_STEP_SIZE;
-    it++;
 
-    it->get_chosen_action_id(chosen);
-    float y = chosen * ACTION_STEP_SIZE;
-    it++;
-
-    it->get_chosen_action_id(chosen);
-    float z = chosen * ACTION_STEP_SIZE;
-    it++;
-
-    auto reward = get_reward(context, x, y, z);
-    total_reward += reward;
-    num_rewards++;
+    auto const draw = click_distribution(eng);
+    auto const outcome = person.get_outcome(chosen, draw);
+    total_reward += outcome;
+    if (rl->report_outcome(it->get_event_id(), outcome, &status))
+    {
+      std::cerr << status.get_error_msg() << "\n";
+      return -1;
+    }
 
     if(i%500 == 0)
     {
-      std::cout << "i: " << i<< ", Avg reward: " << total_reward/num_rewards << ", this reward: " << reward << "\n";
-    }
-
-    for (auto &item : ret)
-    {
-      auto event_id = item.get_event_id();
-      if (rl->report_outcome(event_id, reward, &status) != rl::error_code::success)
-      {
-        std::cout << status.get_error_msg() << "\n";
-        return -1;
-      }
+      std::cout << "i: " << i<< ", Avg reward: " << total_reward/i << ", this reward: " << outcome << "\n";
     }
   }
-  std::cout << "Total iterations: " << num_iterations<< ", Avg reward: " << total_reward/num_rewards << "\n";
+  std::cout << "Total iterations: " << num_iterations<< ", Avg reward: " << total_reward/num_iterations << "\n";
 }

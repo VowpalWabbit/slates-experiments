@@ -125,5 +125,5 @@ int main()
       return -1;
     }
   }
-  std::cout << "Avg reward: " << (reward / (float)num_rounds) << "\n";
+  std::cout << "Total iterations: " << num_rounds<< ", Avg reward: " << (reward / (float)num_rounds) << "\n";
 }
