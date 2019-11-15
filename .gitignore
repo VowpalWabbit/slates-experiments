@@ -36,3 +36,9 @@ build/
 *.exe
 *.out
 *.app
+
+py_36_env/
+__pycache__/
+.ipynb_checkpoints/
+data/
+notebook/data/
