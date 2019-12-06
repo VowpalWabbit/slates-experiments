@@ -1,3 +1,3 @@
 [submodule "reinforcement_learning"]
-	path = reinforcement_learning
+	path = outdated_cpp_attempt/reinforcement_learning
 	url = https://github.com/jackgerrits/reinforcement_learning.git
