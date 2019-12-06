@@ -71,6 +71,24 @@ def create_cb_example(vw, shared, actions, outcome=None, debug=False):
     return examples
 
 
+def combine(lst, index_labels=None, fmt_str="{}={} {}"):
+    return combine_re(lst, 0, index_labels, fmt_str)
+
+
+def combine_re(lst, index, index_labels, fmt_str):
+    index_label = index_labels[index] if index_labels != None else "_{}".format(
+        index)
+    if(index == len(lst) - 1):
+        return ["{}={}".format(index_label, item) for item in lst[index]]
+
+    vals = []
+    for item in lst[index]:
+        next_items = combine_re(lst, index+1, index_labels, fmt_str)
+        vals.extend([fmt_str.format(index_label, item, nxt)
+                     for nxt in next_items])
+    return vals
+
+
 def combine_float_actions(x_actions, y_actions, z_actions):
     all_string_actions = []
     all_actions = []

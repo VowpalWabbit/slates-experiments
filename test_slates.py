@@ -79,3 +79,8 @@ def test_create_combinatorial_cb_example_with_outcome():
         "|Action b,c",
         "|Action b,d",
     ]
+
+def test_combine():
+    assert slates.combine([[1,2],[3]], ["x", "y"]) == ["x=1 y=3", "x=2 y=3"]
+    assert slates.combine([[1,2],[3]], ["x", "y"], fmt_str="{}={},{}") == ["x=1,y=3", "x=2,y=3"]
+    
