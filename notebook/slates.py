@@ -63,15 +63,6 @@ def create_cb_example(vw, shared, actions, outcome=None, debug=False):
 
   return examples
 
-def slate_pred_conv(prediction):
-  size_so_far = 0
-  for action_score in prediction:
-    for i, a_s in enumerate(action_score):
-      a,s = a_s
-      action_score[i] = (a - size_so_far, s)
-    size_so_far += len(action_score)
-  return prediction
-
 def combine_float_actions(x_actions, y_actions, z_actions):
   all_string_actions = []
   all_actions = []
@@ -107,6 +98,7 @@ def create_cb_example(vw, shared, actions, outcome=None, debug=False):
   else:
     chosen = -1
 
+   
   for i, action in enumerate(actions):
     if i == chosen:
       action_str = "{}:{}:{} |Action {}".format(chosen, cost, prob, action)
@@ -125,20 +117,13 @@ def slate_pred_conv(prediction):
     size_so_far += len(action_score)
   return prediction
 
-def sample(pred):
-    """Returns the sampled prediction, the slot chosen, and the action chosen in that slot"""
-    outer_sample = np.random.choice(len(pred))
-    unzipped = list(zip(*pred[outer_sample]))
-    # Normalize
-    unzipped[1] = [float(i)/sum(unzipped[1]) for i in unzipped[1]]
-    chosen = np.random.choice(unzipped[0], p=unzipped[1])
+def normalize(items):
+    return [float(i)/sum(items) for i in items]
 
-#     print("Sampling from slot: {}".format(outer_sample))
-#     print("Probs: {}".format(unzipped[1]))
-#     print("Action chosen: {}".format(chosen))
-    if chosen != 0:
-        pred[outer_sample][0], pred[outer_sample][chosen] = pred[outer_sample][chosen], pred[outer_sample][0]
-    return pred, outer_sample, chosen
+def sample_index(id_prob_pairs):
+    ids = [item[0] for item in id_prob_pairs]
+    probabilities = normalize([item[1] for item in id_prob_pairs])
+    return np.random.choice(len(ids), p=probabilities)
 
 # def sample_cb(pred):
 #     outer_sample = np.random.choice(len(pred))

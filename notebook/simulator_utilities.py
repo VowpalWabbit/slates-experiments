@@ -21,10 +21,10 @@ def gen_distribution(dist_type, mu, std, n, pmin=None, pmax=None, show_plot=Fals
         x_pdf = sts.gamma.pdf(x_tick, a=shape, scale=scale)
     else:
         raise ValueError('dist_type must be in ["normal", "gamma"]')
-    # reverse = np.random.randint(0, 2)
-    # if reverse==1:
-    #     x = pmax - x + pmin
-    #     x_pdf = x_pdf[::-1]
+    reverse = np.random.randint(0, 2)
+    if reverse==1:
+        x = pmax - x + pmin
+        x_pdf = x_pdf[::-1]
     if show_plot:
         plt.hist(x, bins=25, density=True, alpha=0.6, color='darkcyan')
         plt.plot(x_tick, x_pdf, 'black', linewidth=2)
