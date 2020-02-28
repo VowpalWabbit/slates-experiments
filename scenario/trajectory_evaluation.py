@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from scipy.spatial.distance import cdist
 
 class TrajectoryEvaluation():
@@ -38,7 +39,8 @@ class TrajectoryEvaluation():
 
     def find_nearest_reward(self, df_trajectory, df_summary):
         df_trajectory_completed = pd.DataFrame()
-        for c in df_trajectory['context'].unique():
+        print('>>> Finding nearest configuration reward by context...')
+        for c in tqdm(df_trajectory['context'].unique()):
             # All config summary
             df_summary_context = df_summary.loc[df_summary['context']==c].reset_index(drop=True).copy()
             array_grids = np.array([eval(x) for x in df_summary_context['config'].values])
@@ -59,7 +61,9 @@ class TrajectoryEvaluation():
     def prep_data(self):
         df_summary = pd.read_csv(self.summary_file)
         df_opt = self.optimal_reward(df_summary)
+        print('>>> Ground truth file loaded.')
         df_trajectory = self.read_trajectory()
+        print('>>> Trajectory loaded.')
         df_trajectory = self.complete_trajectory(df_trajectory, df_summary)
         df = pd.merge(df_trajectory, df_opt, how='left', left_on=['context'], right_on=['context'], suffixes=['', '_opt'])
         df = self.add_regret(df)
@@ -101,18 +105,19 @@ class TrajectoryEvaluation():
         df = self.prep_data()
         df_summary = df.groupby('context').apply(lambda group: self.agg_df(group))
         df_summary = df_summary.round(4)
+        print('>>> Evaluation generated.')
         return df_summary
     
 
 if __name__ == "__main__":
     '''
     Inputs:
-    trajectory_file: path to the trajectory file. The file should be comma separated. Each line in the format of "[context]", "(configuration)", sample_size. 
+    trajectory_file: path to the trajectory file. The file should be comma separated without header. Each line in the format of "[context]", "(configuration)", sample_size. 
                      eg: "['Windows', 'wired', 'CA']","(3.79, 0.11, 1.05)",8
                      In debug mode, you can also pass a reward as the 4th element. 
                      If empty, sample_size will be filled with 1 for each configuration while reward will be the average reward from the nearest configuration according to the ground truth summary file.
     summary_file: path to the ground truth summary file.
-    opt_reward: min or max
+    opt_reward: "min" or "max"
     '''
     te = TrajectoryEvaluation(sys.argv[1], sys.argv[2], sys.argv[3], debug=False)
     df_summary = te.evaluate()

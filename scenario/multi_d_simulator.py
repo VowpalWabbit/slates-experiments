@@ -36,8 +36,12 @@ class MultiDSimulator:
         self.summarize_task()
         
     def update_args(self):
+        if not os.path.exists(self.folder_path):
+            os.makedirs(self.folder_path)
         self.summary_file_path = os.path.join(self.folder_path, 'simulation_data_summary.csv')
-        self.context_file_path = os.path.join(self.folder_path, 'simulation_data_{0}.csv')        
+        self.context_file_path = os.path.join(self.folder_path, 'simulation_data_{0}.csv')
+        self.all_data_path = os.path.join(self.folder_path, 'simulation_data_all.csv')
+        self.config_path = os.path.join(self.folder_path, 'simulation_data_configs.json')
         self.unique_contexts = [list(x) for x in itertools.product(*self.contexts.values())]
         self.update_discretization_policy(self.discretization_policy, self.actions, self.share_discretized_grid)
         self.opt_target = 'Cost' if self.reward_minimization else 'Reward'
@@ -277,12 +281,24 @@ class MultiDSimulator:
             c_coeff = c_coeff*self.context_dist_change[f]['coeff_scale']
         return c_coeff
 
-    def export_data(self, context, data, to_csv=False):
+    def update_output_config(self, original_config):
+        output_config = {}
+        for p in self.param_list:
+            output_config[p] = {}
+            for x in ['dist_inputs']:
+                output_config[p][x] = list(original_config[p][x])
+        output_config['configs'] = {}
+        for x in ['reward_equation', 'coefficients', 'errors']:
+            xv = original_config['configs'][x]
+            output_config['configs'][x] = xv if isinstance(xv, str) else list(xv)
+        return output_config
+
+    def export_data(self, context, data, to_file=True):
         c_name = '_'.join(context)
         c_data = [context + list(x) for x in data]
         df_context = pd.DataFrame(c_data, columns=self.df_cols)
         df_context = df_context.sample(frac=1)
-        if to_csv:
+        if to_file:
             df_context.to_csv(self.context_file_path.format(c_name), index=False)
         return df_context
 
@@ -296,12 +312,13 @@ class MultiDSimulator:
         df_summary = df_summary.append(df_mean)
         return df_summary
 
-    def gen_trajectory(self, df_summary, length, include_sample_size=True, sample_size=1, inclue_reward=True):
-        ss = df_summary.sample(length).copy()
+    @staticmethod
+    def gen_trajectory(df_summary, length, include_sample_size=True, sample_size=1, include_reward=True):
+        ss = df_summary.sample(length, replace=True).reset_index(drop=True).copy()
         to_keep = ['context', 'config']
         if include_sample_size:
             ss['sample_size'] = sample_size
             to_keep = to_keep + ['sample_size']
-        if inclue_reward:
+        if include_reward:
             to_keep = to_keep + ['reward']
         return ss[to_keep]
