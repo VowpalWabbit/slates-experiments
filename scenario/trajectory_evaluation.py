@@ -2,7 +2,10 @@ import sys
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+<<<<<<< HEAD
 from collections import OrderedDict
+=======
+>>>>>>> 47dd190c33fd9573a3e2aa9625a6c7b9233f1a6e
 from scipy.spatial.distance import cdist
 
 class TrajectoryEvaluation():
@@ -40,8 +43,13 @@ class TrajectoryEvaluation():
         n = df_trajectory[['context', 'config']].drop_duplicates().shape[0]
         t = tqdm(total=n) 
         df_trajectory_completed = pd.DataFrame()
+<<<<<<< HEAD
         # Iterate by context
         for c in df_trajectory['context'].unique():
+=======
+        print('>>> Finding nearest configuration reward by context...')
+        for c in tqdm(df_trajectory['context'].unique()):
+>>>>>>> 47dd190c33fd9573a3e2aa9625a6c7b9233f1a6e
             # All config summary
             df_summary_context = df_summary.loc[df_summary['context']==c].reset_index(drop=True).copy()
             array_grids = df_summary_context['config'].str.replace('\(|\)', '').str.split(",|\)", expand=True).values
