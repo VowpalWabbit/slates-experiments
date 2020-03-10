@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from collections import OrderedDict
 from scipy.spatial.distance import cdist
 
 class TrajectoryEvaluation():
@@ -15,12 +16,8 @@ class TrajectoryEvaluation():
     def read_trajectory(self):
         df_trajectory = pd.read_csv(self.trajectory_file, header=None)
         if self.debug:
-            if df_trajectory.shape[1]==2:
-                df_trajectory.columns = ['context', 'config']
-            if df_trajectory.shape[1]==3:
-                df_trajectory.columns = ['context', 'config', 'sample_size']
-            elif df_trajectory.shape[1]==4:
-                df_trajectory.columns = ['context', 'config', 'sample_size', 'reward']
+            if df_trajectory.shape[1] in [2, 3, 4]:
+                df_trajectory.columns = ['context', 'config', 'sample_size', 'reward'][0:df_trajectory.shape[1]]
             else:
                 raise ValueError('Invalid trajectory format.')
         else:
@@ -34,23 +31,34 @@ class TrajectoryEvaluation():
         if 'sample_size' not in df_trajectory.columns:
             df_trajectory['sample_size'] = 1
         if 'reward' not in df_trajectory.columns:
+            print('>>> Finding nearest configuration reward by context...')
             df_trajectory = self.find_nearest_reward(df_trajectory, df_summary)
         return df_trajectory
 
     def find_nearest_reward(self, df_trajectory, df_summary):
+        # Initialise
+        n = df_trajectory[['context', 'config']].drop_duplicates().shape[0]
+        t = tqdm(total=n) 
         df_trajectory_completed = pd.DataFrame()
-        print('>>> Finding nearest configuration reward by context...')
-        for c in tqdm(df_trajectory['context'].unique()):
+        # Iterate by context
+        for c in df_trajectory['context'].unique():
             # All config summary
             df_summary_context = df_summary.loc[df_summary['context']==c].reset_index(drop=True).copy()
-            array_grids = np.array([eval(x) for x in df_summary_context['config'].values])
+            array_grids = df_summary_context['config'].str.replace('\(|\)', '').str.split(",|\)", expand=True).values
             # Trajectory configs
             df_trajectory_context = df_trajectory.loc[df_trajectory['context']==c].copy()
-            array_config = np.array([eval(x) for x in df_trajectory_context['config'].values])
-            # Neareast from the config summary
-            dist = cdist(array_config, array_grids)
-            df_trajectory_context['reward'] = df_summary_context.loc[dist.argmin(1), 'reward'].values
+            unique_configs = df_trajectory_context['config'].unique()
+            tmp = pd.DataFrame([unique_configs, np.arange(len(unique_configs))//500], index=['config', 'group']).transpose()
+            reward_mapping = {}
+            for i, d in tmp.groupby('group'):
+                array_config = d['config'].str.replace('\(|\)', '').str.split(",|\)", expand=True).values
+                dist = cdist(array_config, array_grids)
+                rewards = df_summary_context.loc[dist.argmin(1), 'reward'].values
+                reward_mapping.update(dict(zip(d['config'].values, rewards)))
+                t.update(len(rewards))
+            df_trajectory_context['reward'] = df_trajectory_context['config'].map(reward_mapping)
             df_trajectory_completed = df_trajectory_completed.append(df_trajectory_context)
+        t.close()
         return df_trajectory_completed
 
     def optimal_reward(self, df_summary):
@@ -75,11 +83,11 @@ class TrajectoryEvaluation():
         if self.opt_reward == 'min':
             df['reward'] = -1.0*df['reward']
             df['reward_opt'] = -1.0*df['reward_opt']
-        df['regret'] = df['reward'] - df['reward_opt']
+        df['regret'] = df['reward_opt'] - df['reward'] 
         return df
     
     def agg_df(self, df_group):
-        agg = {}
+        agg = OrderedDict()
         agg['Total_N'] = df_group['sample_size'].sum()
         agg['Optimal_Reward'] = df_group['reward_opt'].mean()
         df_last5 = df_group.loc[df_group.loc[::-1, 'sample_size'].cumsum()[::-1]<=max(5, df_group['sample_size'].values[-1])]
