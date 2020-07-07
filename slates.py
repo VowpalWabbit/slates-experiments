@@ -44,6 +44,45 @@ def create_slates_example(vw, shared, action_sets, outcome=None, debug=False):
     return examples
 
 
+def create_native_slates_example(vw, shared, action_sets, outcome=None, debug=False):
+    def add(container, ex_string):
+        if(debug):
+            container.append(ex_string)
+        else:
+            container.append(vw.example(
+                ex_string, labelType=pyvw.pylibvw.vw.lSlates))
+
+    examples = []
+    global_cost = ""
+    if(outcome is not None):
+        _, global_cost, _ = outcome[0]
+    add(examples, "slates shared {} |User {}".format(global_cost, shared))
+    counter = 0
+    actions = []
+    slots = []
+
+    slot_index = 0
+    for action_set in action_sets:
+        ids = []
+        for action in action_set:
+            add(actions, "slates action {} |Action {}".format(slot_index, action))
+            ids.append(str(counter))
+            counter += 1
+
+        if(outcome is not None):
+            chosen, cost, prob = outcome[slot_index]
+            slot_str = "slates slot {}:{} |Slot slot_id={} constant".format(
+                chosen, prob, slot_index)
+        else:
+            slot_str = "slates slot |Slot slot_id={} constant".format(slot_index)
+        add(slots, slot_str)
+
+        slot_index += 1
+    examples.extend(actions)
+    examples.extend(slots)
+    return examples
+
+
 def create_cb_example(vw, shared, actions, outcome=None, debug=False):
     def add(container, ex_string):
         if(debug):
